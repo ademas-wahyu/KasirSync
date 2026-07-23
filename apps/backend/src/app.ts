@@ -10,6 +10,8 @@ import { authRoutes } from './modules/auth/auth.route';
 import { adminRoutes } from './modules/admin/admin.route';
 import { healthRoutes } from './modules/health/health.route';
 
+import { branchRoutes } from './modules/branch/branch.route';
+
 import { errorHandler, notFoundHandler } from './shared/http/handlers';
 
 const app = new Hono<AppEnv>();
@@ -44,6 +46,8 @@ app.get('/', (c) => {
 app.route('/api/v1/health', healthRoutes);
 app.route('/api/v1/auth', authRoutes);
 app.route('/api/v1/admin', adminRoutes);
+
+app.route('/api/v1/branches', branchRoutes);
 
 app.notFound(notFoundHandler);
 app.onError(errorHandler);
