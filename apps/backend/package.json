@@ -2,13 +2,16 @@
   "name": "backend",
   "scripts": {
     "dev": "bun run --hot src/index.ts",
-    "seed": "bun prisma/seed.ts"
+    "seed": "bun prisma/seed.ts",
+    "test": "bun --env-file=.env.test test",
+    "test:db:setup": "bun --env-file=.env.test prisma migrate deploy"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.0",
     "@libsql/client": "^0.17.4",
     "@prisma/adapter-libsql": "^7.9.0",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
     "hono": "^4.12.31",
     "jsonwebtoken": "^9.0.3",
     "zod": "^4.4.3"
@@ -18,7 +21,6 @@
     "@types/bcryptjs": "^3.0.0",
     "@types/bun": "latest",
     "@types/jsonwebtoken": "^9.0.10",
-    "dotenv": "^17.4.2",
     "prisma": "^7.9.0"
   }
 }

@@ -13,8 +13,11 @@ const optionalString = z.preprocess((value) => {
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+
   PORT: z.coerce.number().int().min(1).max(65535).positive().default(3000),
+
   DATABASE_URL: z.string().trim().min(1, 'DATABASE_URL environment variable is required'),
+  
   DATABASE_AUTH_TOKEN: optionalString,
 
   JWT_SECRET: z

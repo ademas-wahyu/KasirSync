@@ -6,11 +6,11 @@ export type AuthUser = {
   email: string;
   role: Role;
   branchId: string | null;
+  isActive: boolean;
 };
 
 export type AppEnv = {
   Variables: {
-    userId: string;
-    role: Role;
+    authUser: AuthUser;
   };
 };

@@ -1,89 +1,71 @@
 import { createMiddleware } from 'hono/factory';
-import jwt, { type JwtPayload } from 'jsonwebtoken';
+import jwt, { type JwtPayload, TokenExpiredError } from 'jsonwebtoken';
 
 import { env } from '../config/env';
-import type { Role } from '../generated/prisma/client';
+import { prisma } from '../lib/prisma';
+import { AppError } from '../shared/errors/app-error';
 import type { AppEnv } from '../types/app-env';
 
-const validRoles: readonly Role[] = ['SUPER_ADMIN', 'BRANCH_MANAGER', 'CASHIER'];
+function getBearerToken(authorization: string | undefined): string {
+  if (!authorization) {
+    throw new AppError(401, 'UNAUTHORIZED', 'Header Authorization tidak ditemukan');
+  }
 
-function isRole(value: unknown): value is Role {
-  return typeof value === 'string' && validRoles.includes(value as Role);
+  const parts = authorization.trim().split(/\s+/);
+
+  if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer' || !parts[1]) {
+    throw new AppError(401, 'UNAUTHORIZED', 'Header Authorization tidak valid');
+  }
+
+  return parts[1];
 }
 
 export const auth = createMiddleware<AppEnv>(async (c, next) => {
-  const authorization = c.req.header('Authorization');
+  const token = getBearerToken(c.req.header('Authorization'));
 
-  if (!authorization?.startsWith('Bearer ')) {
-    return c.json(
-      {
-        error: {
-          code: 'AUTH_REQUIRED',
-          message: 'Bearer token diperlukan',
-        },
-      },
-      401,
-    );
-  }
-
-  const token = authorization.slice(7).trim();
-
-  if (!token) {
-    return c.json(
-      {
-        error: {
-          code: 'AUTH_REQUIRED',
-          message: 'Token tidak ditemukan',
-        },
-      },
-      401,
-    );
-  }
-
-  let payload: string | JwtPayload;
+  let payload: JwtPayload;
 
   try {
-    payload = jwt.verify(token, env.JWT_SECRET, {
+    const decoded = jwt.verify(token, env.JWT_SECRET, {
       algorithms: ['HS256'],
     });
-  } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      return c.json(
-        {
-          error: {
-            code: 'AUTH_EXPIRED',
-            message: 'Token sudah kedaluwarsa',
-          },
-        },
-        401,
-      );
+
+    if (
+      typeof decoded === 'string' ||
+      typeof decoded.sub !== 'string' ||
+      decoded.sub.length === 0
+    ) {
+      throw new AppError(401, 'AUTH_EXPIRED', 'Token tidak valid');
     }
 
-    return c.json(
-      {
-        error: {
-          code: 'AUTH_INVALID',
-          message: 'Token tidak valid',
-        },
-      },
-      401,
-    );
+    payload = decoded;
+  } catch (error) {
+    if (error instanceof TokenExpiredError) {
+      throw new AppError(401, 'AUTH_EXPIRED', 'Token telah kedaluwarsa');
+    }
+
+    throw new AppError(401, 'AUTH_INVALID', 'Token tidak valid');
   }
 
-  if (typeof payload === 'string' || typeof payload.userId !== 'string' || !isRole(payload.role)) {
-    return c.json(
-      {
-        error: {
-          code: 'AUTH_INVALID_PAYLOAD',
-          message: 'Payload token tidak valid',
-        },
-      },
-      401,
-    );
+  const user = await prisma.user.findUnique({
+    where: {
+      id: payload.sub,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      branchId: true,
+      isActive: true,
+    },
+  });
+
+  if (!user || !user.isActive) {
+    throw new AppError(401, 'AUTH_INVALID', 'Token tidak valid');
   }
 
-  c.set('userId', payload.userId);
-  c.set('role', payload.role);
+  c.set('authUser', user);
 
   await next();
 });

@@ -16,12 +16,13 @@ logs
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # dotenv environment variable files
+.env.*
 .env
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
-
+!.env.example
 # caches
 .eslintcache
 .cache
