@@ -88,7 +88,7 @@ export async function resetAuthFixtures() {
       email: testUsers.cashier.email,
       password: cashierPassword,
       role: Role.CASHIER,
-      branchId: branchB.id,
+      branchId: branchA.id,
       isActive: true,
     },
   });

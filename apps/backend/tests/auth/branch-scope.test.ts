@@ -125,7 +125,7 @@ describe('Branch scope', () => {
 
     const testApp = createBranchScopeTestApp();
 
-    const response = await testApp.request(`/branches/${fixtures.branchB.id}`, {
+    const response = await testApp.request(`/branches/${fixtures.branchA.id}`, {
       headers: {
         Authorization: `Bearer ${loginBody.data.token}`,
       },
@@ -135,7 +135,7 @@ describe('Branch scope', () => {
 
     const body = await response.json();
 
-    expect(body.data.branchId).toBe(fixtures.branchB.id);
+    expect(body.data.branchId).toBe(fixtures.branchA.id);
     expect(body.data.role).toBe('CASHIER');
   });
 
@@ -144,7 +144,7 @@ describe('Branch scope', () => {
 
     const testApp = createBranchScopeTestApp();
 
-    const response = await testApp.request(`/branches/${fixtures.branchA.id}`, {
+    const response = await testApp.request(`/branches/${fixtures.branchB.id}`, {
       headers: {
         Authorization: `Bearer ${loginBody.data.token}`,
       },
